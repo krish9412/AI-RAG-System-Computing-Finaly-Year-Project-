@@ -1,8 +1,7 @@
 streamlit
 pdfplumber
-langchain
-faiss-cpu
-openai
 reportlab
-langchain-openai
+langchain
 langchain-community
+sentence-transformers
+faiss-cpu
