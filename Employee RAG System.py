@@ -115,7 +115,7 @@ if uploaded_files and groq_api_key:
                 text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
                 split_docs = text_splitter.split_documents(documents)
                 
-                # 100% Free Embeddings model that compiles cleanly inside Streamlit containers
+                # Free Embeddings model that compiles cleanly inside Streamlit containers
                 embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
                 st.session_state.vector_store = FAISS.from_documents(
                     documents=split_docs,
