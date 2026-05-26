@@ -3,5 +3,6 @@ pdfplumber
 reportlab
 langchain
 langchain-community
-sentence-transformers
+langchain-openai
 faiss-cpu
+ticket
