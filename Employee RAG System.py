@@ -9,7 +9,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from datetime import datetime
 
-# LangChain imports (Optimized for Free Cloud Deployment)
+# LangChain & Groq imports (Optimized for Free Cloud Deployment)
 from langchain_groq import ChatGroq
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -19,7 +19,7 @@ from langchain.docstore.document import Document
 # Page Configuration
 st.set_page_config(page_title="📚 Employee Training System Using RAG ", layout="wide")
 
-# 🔐 SECURE GROQ API KEY EXTRACTION FROM SECRETS
+# 🔐 SECURE GROQ API KEY EXTRACTION FROM SECRETS OR ENVIRONMENT
 if "GROQ_API_KEY" in st.secrets:
     groq_api_key = st.secrets["GROQ_API_KEY"]
 elif os.environ.get("GROQ_API_KEY"):
@@ -54,7 +54,7 @@ if 'vector_store' not in st.session_state:
 # Sidebars Appearance
 st.sidebar.title("🎓 Professional Learning System")
 
-# Clear Sessions Button
+# Clear Sessions Button & Session Management
 if st.sidebar.button("🔄 Reset Application"):
     for key in list(st.session_state.keys()):
         del st.session_state[key]
@@ -65,11 +65,11 @@ if st.sidebar.button("🔄 Reset Application"):
     st.session_state.vector_store = None
     st.rerun()
 
-# If missing from backend secrets, let user provide any Groq key optionally
+# Fallback Input box if Secrets aren't deployed yet
 if not groq_api_key:
     groq_api_key = st.sidebar.text_input("🔑 Enter your Free Groq API key", type="password")
     if not groq_api_key:
-        st.info("💡 Application Key missing. Please provide a Groq API Key or set up Streamlit Secrets.")
+        st.info("💡 Application Key missing. Please provide a Groq API Key or set up Streamlit Secrets to automatically bypass this step.")
 
 # 📄 Multi-File Uploader for PDFs
 uploaded_files = st.sidebar.file_uploader("📝 Upload Training PDFs", type=['pdf'], accept_multiple_files=True)
@@ -88,7 +88,7 @@ def extract_pdf_text(pdf_file):
         st.error(f"Error extracting PDF text: {e}")
         return ""
 
-# Process uploaded files
+# Process uploaded files and add to session state
 if uploaded_files and groq_api_key:
     current_filenames = [file.name for file in uploaded_files]
     if current_filenames != st.session_state.uploaded_file_names:
@@ -115,7 +115,7 @@ if uploaded_files and groq_api_key:
                 text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
                 split_docs = text_splitter.split_documents(documents)
                 
-                # 100% Free Local Embeddings running on CPU inside Streamlit Cloud
+                # 100% Free Embeddings model that compiles cleanly inside Streamlit containers
                 embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
                 st.session_state.vector_store = FAISS.from_documents(
                     documents=split_docs,
@@ -124,9 +124,9 @@ if uploaded_files and groq_api_key:
             except Exception as e:
                 st.error(f"Error initializing vector store: {e}")
 elif not uploaded_files:
-    st.info("📥 Please upload PDF files to begin.")
+    st.info("📥 Please process documents to begin.")
 
-# 🎯 Free Open-Source Models on Groq
+# 🎯 Groq Free tier production models
 model_options = ["llama-3.3-70b-versatile", "llama3-8b-8192", "mixtral-8x7b-32768"]
 selected_model = st.sidebar.selectbox("Select Free LLM Engine", model_options, index=0)
 
@@ -136,7 +136,6 @@ role = st.sidebar.selectbox("Select Your Role", role_options)
 learning_focus_options = ["Leadership", "Technical Skills", "Communication", "Project Management", "Innovation", "Team Building", "Finance"]
 learning_focus = st.sidebar.multiselect("Select Learning Focus", learning_focus_options)
 
-# Display uploaded files in sidebar
 if st.session_state.uploaded_file_names:
     st.sidebar.markdown("---")
     st.sidebar.subheader("📄 Uploaded Files")
@@ -171,10 +170,11 @@ def generate_rag_answer(question):
         Document Content: {context}
         
         IMPORTANT INSTRUCTIONS:
-        1. Use ONLY the information from the uploaded documents to answer the question.
-        2. If the question cannot be answered based on the provided documents, say "I can answer questions based on the uploaded documents only".
-        3. Reference specific document names.
-        4. Be concise and accurate.
+        1. Use ONLY the information from the uploaded documents to answer the question
+        2. If the question cannot be answered based on the provided documents, say "I can answer questions based on the uploaded documents only"
+        3. Do not use any external knowledge or information not present in the documents
+        4. Reference specific document names when providing information
+        5. Be concise and accurate
         """
         
         llm = ChatGroq(groq_api_key=groq_api_key, model_name=selected_model, temperature=0.2)
@@ -194,7 +194,6 @@ def generate_rag_answer(question):
     except Exception as e:
         return f"Error generating answer: {str(e)}"
 
-# Employee Queries Section
 st.sidebar.markdown("---")
 st.sidebar.subheader("💬 Employee Queries")
 
@@ -268,7 +267,7 @@ def perform_course_generation():
         combined_docs = ""
         for i, doc in enumerate(st.session_state.extracted_texts):
             doc_summary = f"\n--- DOCUMENT {i+1}: {doc['filename']} ---\n"
-            doc_summary += doc['text'][:2500]
+            doc_summary += doc['text'][:2000]
             combined_docs += doc_summary + "\n\n"
         
         professional_context = f"Role: {role}, Focus: {', '.join(learning_focus)}"
@@ -303,7 +302,7 @@ def perform_course_generation():
         }}
         """
         
-        llm = ChatGroq(groq_api_key=groq_api_key, model_name=selected_model, temperature=0.3)
+        llm = ChatGroq(groq_api_key=groq_api_key, model_name=selected_model, temperature=0.4)
         response = llm.invoke(prompt)
         response_content = response.content.strip()
         
@@ -322,13 +321,12 @@ def perform_course_generation():
                 total_questions += len(quiz.get("questions", []))
             st.session_state.total_questions = total_questions
         except json.JSONDecodeError as e:
-            st.error("Format error from Open Source Engine. Click 'Generate My Course' again to retry.")
+            st.error("Format error from Open Source Engine. Click 'Generate My Course' again to retry structural synthesis.")
         
     except Exception as e:
         st.error(f"Error: {e}")
     st.session_state.is_generating = False
 
-# Layout splits
 tab1, tab2, tab3 = st.tabs(["📚 Course Content", "❓ Employer Queries", "📑 Document Sources"])
 
 if st.session_state.is_generating:
@@ -367,18 +365,25 @@ with tab1:
                                 check_answer(question_id, user_answer, q.get('correct_answer'))
     else:
         st.title("Welcome to the Professional Training Workspace")
+        st.markdown("Upload multiple training PDFs to synthesize an interactive curriculum program.")
         if st.session_state.extracted_texts and groq_api_key and not st.session_state.is_generating:
             if st.button("🚀 Generate My Course", use_container_width=True):
                 generate_course()
 
 with tab2:
     st.title("💬 Employer Queries")
-    for i, query in enumerate(st.session_state.employer_queries):
-        with st.expander(f"Question {i+1}: {query['question']}"):
-            st.write(query['answer'])
+    if not st.session_state.employer_queries:
+        st.info("No queries filed yet.")
+    else:
+        for i, query in enumerate(st.session_state.employer_queries):
+            with st.expander(f"Question {i+1}: {query['question']}"):
+                st.write(query['answer'])
 
 with tab3:
     st.title("📑 Document Sources")
-    for i, doc in enumerate(st.session_state.extracted_texts):
-        with st.expander(f"Document {i+1}: {doc['filename']}"):
-            st.text_area("Preview:", value=doc['text'][:1000], height=200, disabled=True)
+    if not st.session_state.extracted_texts:
+        st.info("No documents uploaded yet.")
+    else:
+        for i, doc in enumerate(st.session_state.extracted_texts):
+            with st.expander(f"Document {i+1}: {doc['filename']}"):
+                st.text_area("Preview:", value=doc['text'][:1000], height=200, disabled=True)
