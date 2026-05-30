@@ -1,8 +1,8 @@
-streamlit
+langchain
+langchain-groq
+langchain-community
+langchain-text-splitters
+faiss-cpu
 pdfplumber
 reportlab
-langchain
-langchain-community
-langchain-groq
-sentence-transformers
-faiss-cpu
+streamlit
