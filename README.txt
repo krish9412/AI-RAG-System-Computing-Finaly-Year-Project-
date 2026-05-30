@@ -18,7 +18,7 @@ An AI-powered Streamlit application that allows users to upload PDF documents, e
 
 ```text
 employee-rag-system/
-├── app.py
+├── Employee Rag System app.py
 ├── requirements.txt
 ├── README.md
 ├── .gitignore
